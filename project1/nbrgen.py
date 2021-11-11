@@ -9,7 +9,6 @@ def nbrgen(N, start=1):
     
     while start > int(float(math.sqrt(k * N))):
         k += 1
-        print("k = ", k)
     
     j = start % int(float(math.sqrt(k * N)))
 

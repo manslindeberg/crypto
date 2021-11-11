@@ -27,7 +27,7 @@ def prime_factorization(number: int, factor_base: List[int]) -> Dict[int, int]:
     with prime-exponent pairs. If not possible, an empty dictionary is returned.
     """
     prime_factors = dict()
-    for prime in primes:
+    for prime in factor_base:
         if prime <= number:
             while (number / prime).is_integer():
                 if prime in prime_factors:
