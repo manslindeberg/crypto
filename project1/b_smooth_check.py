@@ -7,7 +7,7 @@ def read_factor_base(b: int):
     This list forms the factor base.
     """
     primes = list()
-    with open("prim_2_24.txt") as file:
+    with open("../prim_2_24.txt") as file:
         for line in file:
             line = line.split()
             line = list(map(int, line))
