@@ -1,22 +1,22 @@
 from typing import List, Dict
 import math
 
-def read_factor_base(b: int):
+def read_factor_base(F: int):
     """
     Reads all primes from "prim_2_24.txt" up to value b into a list.
     This list forms the factor base.
     """
     primes = list()
-    with open("../prim_2_24.txt") as file:
+    with open("prim_2_24.txt") as file:
         for line in file:
             line = line.split()
             line = list(map(int, line))
             primes += line
             
-            if primes[-1] > b:
+            if len(primes) > F:
                 break
-
-        while primes[-1] > b:
+        
+        while len(primes) > F:
                 del primes[-1]
     return primes
 
@@ -39,7 +39,18 @@ def prime_factorization(number: int, factor_base: List[int]) -> Dict[int, int]:
             return prime_factors
     else:
         return {}
-    return prime_factors
+
+def generate_binary_matrix(b_smooth_factors: List[Dict[int, int]], primes: List[int]) -> List[List[int]]:
+    binary_matrix = []
+    for factors in b_smooth_factors:
+        row = [0 for col in range(len(primes))]
+        for prime, exponent in factors.items():
+            if exponent % 2 == 1:
+                row[primes.index(prime)] = 1
+        binary_matrix.append(row)
+        # print(f"row {row}")
+        # print(f"factors {factors}")
+    return binary_matrix
 
 if __name__ == "__main__":
     """
