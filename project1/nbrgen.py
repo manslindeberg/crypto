@@ -6,7 +6,7 @@ import math
 #   start is the starting number
 def nbrgen(N, start=1):
     k = 1
-    
+
     while start > int(float(math.sqrt(k * N))):
         k += 1
     

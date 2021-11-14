@@ -7,7 +7,7 @@ def read_factor_base(F: int):
     This list forms the factor base.
     """
     primes = list()
-    with open("prim_2_24.txt") as file:
+    with open("../prim_2_24.txt") as file:
         for line in file:
             line = line.split()
             line = list(map(int, line))
@@ -59,6 +59,6 @@ if __name__ == "__main__":
     primes = read_factor_base(30)
     b_smooth_fact = prime_factorization(24059577777, primes)
     not_b_smooth_fact = prime_factorization(852891037441, primes) # 31^8
-    print(f"B-smooth: {b_smooth_fact}")
-    print(f"Not B-smooth {not_b_smooth_fact}")
+    #print(f"B-smooth: {b_smooth_fact}")
+    #print(f"Not B-smooth {not_b_smooth_fact}")
     
