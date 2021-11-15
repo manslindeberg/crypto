@@ -9,6 +9,7 @@ import itertools
 import subprocess
 import time
 import sys
+from fractions import gcd
 
 """
 Command line: 1 - number to factorize, 2 - L, 3 - d
@@ -82,6 +83,7 @@ if __name__ == '__main__':
     #print(b_smooth_factors) 
     #print(b_smooth_numbers)
     binary_matrix = np.array(generate_binary_matrix(b_smooth_factors, primes))
+    print(np.shape(binary_matrix))
     #print(binary_matrix)
     np.savetxt('out.txt', binary_matrix, delimiter=' ', fmt="%d")
     with open("out.txt", "r") as f:
@@ -93,7 +95,7 @@ if __name__ == '__main__':
         contents = "".join(contents)
         f.write(contents)
     
-    # subprocess.call(["./GaussBin.exe", 'out.txt', 'sol.out'])
+    subprocess.call(["./GaussBin.exe", 'out.txt', 'sol.out'])
     with open('sol.out') as f:
         sol = f.readlines()
         arr = []
@@ -109,13 +111,15 @@ if __name__ == '__main__':
             resultb = 1
             resultf = 1
             for i in index:
-                resultb *= b_smooth_numbers[i]
+                resultb = ( resultb * b_smooth_numbers[i] )
                 for k,v in b_smooth_factors[i].items():
-                    resultf *= (resultf * k**v)
+                    resultf = (resultf * (k**(v)))
             
-            R1 = isqrt(resultf) % N
-            L1 = int(resultb) % N
-            lol = math.gcd(R1 - L1, N)
+            # print(resultb)
+            # print(resultf)
+            R1 = (resultf) % N
+            L1 = resultb % N
+            lol = math.gcd(int(R1 - L1), N) if R1 > L1 else math.gcd(int(L1 - R1), N)
             if(lol != 1 and lol != N):
                 p = lol
                 q = int(N/p)
