@@ -7,48 +7,53 @@ import numpy as np
 from scipy.linalg import lu as lu_factorization
 import itertools
 import subprocess
+import time
+import sys
 
-def binary_row_reduction(m):
-    rows, cols = m.shape
-    l = 0
-    for k in range(min(rows,cols)):
-        if l>= cols: break
-        if m[k,l] == 0:
-            found_pivot = False
-            while not found_pivot:
-                if l >= cols: 
-                    break
-                for i in range(k+1, rows):
-                    if m[i,l]:
-                        m[[i,k]] = m[[k,i]]
-                        found_pivot = True
-                        break
-                if not found_pivot:
-                    l += 1
-        if l >= cols: break
-        for i in range(k+1, rows):
-            if m[i,l]: m[i] ^= m[k]
-        l += 1
-    return m
+"""
+Command line: 1 - number to factorize, 2 - L, 3 - d
+"""
 
+_1_50 = 1 << 50
+
+def isqrt(x):
+    """Return the integer part of the square root of x, even for very
+    large integer values."""
+    if x < 0:
+        raise ValueError('square root not defined for negative numbers')
+    if x < _1_50:
+        return int(math.sqrt(x))  # use math's sqrt() for small parameters
+    n = int(x)
+    if n <= 1:
+        return n  # handle sqrt(0)==0, sqrt(1)==1
+    # Make a high initial estimate of the result (a little lower is slower!!!)
+    r = 1 << ((n.bit_length() + 1) >> 1)
+    while True:
+        newr = (r + n // r) >> 1  # next estimate by Newton-Raphson
+        if newr >= r:
+            return r
+        r = newr
 
 if __name__ == '__main__':
-    L = 1000
-    #L = 12
-    d = 5
+    if len(sys.argv) < 4:
+        print("Too few arguments")
+        sys.exit()
+
+    N = int(sys.argv[1])
+    L = int(sys.argv[2])
+    d = int(sys.argv[3])
     p = 0
     q = 0
     #d = 2
     F = L - d 
     # Real number: 
-    N = 220744554721994695419563
     # Test number:
     #N = 16637
     #Parameter to send in when starting program e.g. python3 main.py <N>
     # N = int(sys.argv[1])
     b_smooth_factors = []
     b_smooth_numbers = []
-    print("Number to factorize: " + str(N))
+    print("Number to factorize: " + str(N) + " L =" + str(L) +  "F =" + str(F))
     # Reads prime facor base up to B
     primes = read_factor_base(F)
     
@@ -88,7 +93,7 @@ if __name__ == '__main__':
         contents = "".join(contents)
         f.write(contents)
     
-    subprocess.call(["./GaussBin.exe", 'out.txt', 'sol.out'])
+    # subprocess.call(["./GaussBin.exe", 'out.txt', 'sol.out'])
     with open('sol.out') as f:
         sol = f.readlines()
         arr = []
@@ -106,10 +111,9 @@ if __name__ == '__main__':
             for i in index:
                 resultb *= b_smooth_numbers[i]
                 for k,v in b_smooth_factors[i].items():
-                    resultf *= k**v
-
-            print(resultf)
-            R1 = int(math.sqrt(resultf)) % N
+                    resultf *= (resultf * k**v)
+            
+            R1 = isqrt(resultf) % N
             L1 = int(resultb) % N
             lol = math.gcd(R1 - L1, N)
             if(lol != 1 and lol != N):
