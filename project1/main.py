@@ -140,10 +140,9 @@ if __name__ == '__main__':
     # Reads first F prime numbers
     primes = read_factor_base(F)
 
-    # Generate L B-smooth r^2 numbers 
+    # Generate L B-smooth r^2 numbers
     k = 1
     j = 1
-
     while len(b_smooth_factors) < L:
         root = math.sqrt(k*N)
         number = int(root) + j
@@ -202,7 +201,7 @@ if __name__ == '__main__':
                 p = gcd
                 q = int(N/p)
                 print("Solution found! \n p = " + str(p) + ", q = " + str(q) + ", p*q = " + str(p*q))
-                print(f"Execution time {time.time() - start}")
+                print(f"Execution time {time.time() - start}s")
                 break
             else:
                 print("No solution found. p = " + str(p))
