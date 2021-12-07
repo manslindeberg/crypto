@@ -68,6 +68,7 @@ if __name__ == '__main__':
     keystream =  '1110100000011111001000001100010111011010011100001000101100110001100111100001000001011111010001010111101110101101101000101010101111001011011100011000111100000111101111101110110000101010010101101'
     keystream_arr = list(map(int, keystream))
     stream_len = len(keystream)
+    print("\nOriginal keystream: ", keystream)
     
     #Number of outliers (Cannot be larger than 2**13)
     N = 10 
@@ -137,10 +138,11 @@ if __name__ == '__main__':
     for stream in keystreams:
         stream_string = ''.join([str(digit) for digit in stream])
         if stream_string == keystream:
-            print("\nKey found: ", stream_string, "\n")
+            print("\nMatching keystream found: ", stream_string, "\n")
             ind = keystreams.index(stream)
             print(f"Which corresponds to values: {outliers[0][ind][1]}, {outliers[1][ind][1]}, {outliers[2][ind][1]}")
-            print(f"And initial states:\nstate1: {states[outliers[0][ind][0]][4:]}\nstate2: {states[outliers[1][ind][0]][2:]}\nstate3: {states[outliers[2][ind][0]]}\n")
+            print(f"Initial states:\nstate1: {states[outliers[0][ind][0]][4:]}\nstate2: {states[outliers[1][ind][0]][2:]}\nstate3: {states[outliers[2][ind][0]]}\n")
+            print(f"Key: {''.join(str(digit) for digit in (states[outliers[0][ind][0]][4:] + states[outliers[1][ind][0]][2:] + states[outliers[2][ind][0]]))}")
 
     ##Verify states
     keyverify = gen_keystream(lfsr(c1, states[outliers[0][ind][0]][4:], stream_len), lfsr(c2, states[outliers[1][ind][0]][2:], stream_len), lfsr(c3, states[outliers[2][ind][0]], stream_len))
