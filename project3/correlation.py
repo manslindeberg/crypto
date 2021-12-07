@@ -2,8 +2,9 @@ from typing import List
 import numpy as np
 from matplotlib import pyplot as plt
 import collections
-from itertools import combinations
+import time
 
+##Simulates LFSR to generate sequences
 def lfsr(taps: List[int], init_state: List[int], length: int) -> List[int]:
 	
 	for tap in taps:
@@ -23,14 +24,15 @@ def lfsr(taps: List[int], init_state: List[int], length: int) -> List[int]:
 		state.append(new_val)
 	return sequence
 
-def corr_prob(str1, str2):
+##Calculates Hamming distance between two binary arrays
+def corr_prob(arr1, arr2):
     dist = 0
-    if len(str1) != len(str2):
-        print("Strings must be same length")
-        return "njet"
-    for char1, char2 in zip(str1, str2):
-        dist += int(char1, 2) ^ int(char2, 2)
-    return (1 - dist/len(str1))
+    if len(arr1) != len(arr2):
+        print("Input arrays must be of the same length")
+        return 1
+    for element1, element2 in zip(arr1, arr2):
+        dist += element1 ^ element2
+    return (1 - dist/len(arr1))
 
 ##Find the nbr_elements most deviating (from 0.5) elements and return them
 def find_max_dev(cor1, cor2, cor3, nbr_elements):
@@ -61,43 +63,60 @@ def gen_keystream(seq1, seq2, seq3):
 
 
 if __name__ == '__main__':
+
+    ##Original keystream
     keystream =  '1110100000011111001000001100010111011010011100001000101100110001100111100001000001011111010001010111101110101101101000101010101111001011011100011000111100000111101111101110110000101010010101101'
+    keystream_arr = list(map(int, keystream))
     stream_len = len(keystream)
-    N = 10 #Number of outliers (Cannot be larger than 2**13) 
+    
+    #Number of outliers (Cannot be larger than 2**13)
+    N = 10 
+
+    ##LFSR:s
     c1 = [1,2,4,6,7,10,11,13]
     c2 = [2,4,6,7,10,11,13,15]
     c3 = [2,4,5,8,10,13,16,17]
+
+    ##Max nbr of initial states for the three LFSR:s
     c1_pow = 2**13
     c2_pow = 2**15
     c3_pow = 2**17
-    cor1 = []
+
+    ##All initial states of the LFSR:s
+    states = []
+
+    ##The sequences generated from the LFSR:s
     sequences1 = []
-    cor2 = []
     sequences2 = []
-    cor3 = []
     sequences3 = []
 
-    ##Calculate all probabilities
+    ##All probabilities for the sequences generated from the LFSR:s
+    cor1 = []
+    cor2 = []
+    cor3 = []
+
+    runtime = time.time()
+
+    ##Calculate probabilities for all sequences
     for init_state in range(1, c3_pow):
+        state = [int(i) for i in '{0:017b}'.format(init_state)]
+        states.append(state)
         if init_state < c1_pow:
-            sequences1.append(lfsr(c1, [int(i) for i in '{0:013b}'.format(init_state)], stream_len))
-            cor1.append(corr_prob(keystream, "".join([str(digit) for digit in sequences1[init_state-1]])))
+            sequences1.append(lfsr(c1, state[4:], stream_len))
+            cor1.append(corr_prob(keystream_arr, sequences1[init_state-1]))
         if init_state < c2_pow:
-            sequences2.append(lfsr(c2, [int(i) for i in '{0:015b}'.format(init_state)], stream_len))
-            cor2.append(corr_prob(keystream, "".join([str(digit) for digit in sequences2[init_state-1]])))
-        sequences3.append(lfsr(c3, [int(i) for i in '{0:017b}'.format(init_state)], stream_len))
-        cor3.append(corr_prob(keystream, "".join([str(digit) for digit in sequences3[init_state-1]])))
-
-    ##Take out outliers N largest and lowest and add their sequences
-    outliers = find_max_dev(cor1, cor2, cor3, N)
-    print("Max outliers 1 = ", max(outliers[0], key=lambda x:x[1]))
-    print("Max outliers 2 = ", max(outliers[1], key=lambda x:x[1]))
-    print("Max outliers 3 = ", max(outliers[2], key=lambda x:x[1]))
-
+            sequences2.append(lfsr(c2, state[2:], stream_len))
+            cor2.append(corr_prob(keystream_arr, sequences2[init_state-1]))
+        sequences3.append(lfsr(c3, state, stream_len))
+        cor3.append(corr_prob(keystream_arr, sequences3[init_state-1]))
+    
+    ##Print max probabilities
     print("\nMax prob 1 = ", max(cor1))
     print("Max prob 2 = ", max(cor2))
     print("Max prob 3 = ", max(cor3))
     
+    ##Take out outliers N largest and lowest and add their sequences (To try finding the right combination)
+    outliers = find_max_dev(cor1, cor2, cor3, N)
     sequences = [[],[],[]]
     for element in outliers[0]:
         sequences[0].append(sequences1[element[0]])
@@ -105,35 +124,43 @@ if __name__ == '__main__':
         sequences[1].append(sequences2[element[0]])
     for element in outliers[2]:
         sequences[2].append(sequences3[element[0]])
-    print("\nlen seq = ", len(sequences[0]))
+
+    # print("Max outliers 1 = ", max(outliers[0], key=lambda x:x[1]))
+    # print("Max outliers 2 = ", max(outliers[1], key=lambda x:x[1]))
+    # print("Max outliers 3 = ", max(outliers[2], key=lambda x:x[1]))
     
     ##Generate keystreams for all sequences
     keystreams = []
     keystreams += [gen_keystream(sequences[0][i], sequences[1][i], sequences[2][i]) for i in range(len(sequences[0]))]
-    #max_keystream = [gen_keystream()]
     
+    ##Verify key
     for stream in keystreams:
         stream_string = ''.join([str(digit) for digit in stream])
         if stream_string == keystream:
             print("\nKey found: ", stream_string, "\n")
             ind = keystreams.index(stream)
-            print(f"keystream nbr: {ind} which corresponds to sequences: \nseq1: {sequences[0][ind]}, \nseq2: {sequences[1][ind]}, \nseq3: {sequences[1][ind]}\n")
-            print(f"Which corresponds to values: {outliers[0][ind][1]}, {outliers[1][ind][1]}, {outliers[2][ind][1]}\n")
-            print(f"And initial states:\nstate1: {[int(i) for i in '{0:013b}'.format(outliers[0][ind][0])]}\nstate2: {[int(i) for i in '{0:013b}'.format(outliers[1][ind][0])]}\nstate3: {[int(i) for i in '{0:013b}'.format(outliers[2][ind][0])]}")
-        #print("\nNot a key: \n", stream_string, "\nShould be: \n", keystream)
+            print(f"Which corresponds to values: {outliers[0][ind][1]}, {outliers[1][ind][1]}, {outliers[2][ind][1]}")
+            print(f"And initial states:\nstate1: {states[outliers[0][ind][0]][4:]}\nstate2: {states[outliers[1][ind][0]][2:]}\nstate3: {states[outliers[2][ind][0]]}\n")
 
-    #Plot results
-    # fig, (corr1, corr2, corr3) = plt.subplots(3)
-    # fig.suptitle('Probabilities')
-    # corr1.plot(np.array([i for i in range(len(cor1))]), np.array(cor1), 'o', color='black')
-    # corr2.plot(np.array([i for i in range(len(cor2))]), np.array(cor2), 'o', color='blue')
-    # corr3.plot(np.array([i for i in range(len(cor3))]), np.array(cor3), 'o', color='red')
+    ##Verify states
+    keyverify = gen_keystream(lfsr(c1, states[outliers[0][ind][0]][4:], stream_len), lfsr(c2, states[outliers[1][ind][0]][2:], stream_len), lfsr(c3, states[outliers[2][ind][0]], stream_len))
+    print(f"\nVerify states: {'pass' if keystream == ''.join([str(digit) for digit in keyverify]) else 'fail'}")
 
-    # ##Plot outliers
-    # fig2, (out1, out2, out3) = plt.subplots(3)
-    # fig2.suptitle('Outliers')
-    # out1.plot(np.array([element[0] for element in outliers[0]]), np.array([element[1] for element in outliers[0]]), 'o', color='black')
-    # out2.plot(np.array([element[0] for element in outliers[1]]), np.array([element[1] for element in outliers[1]]), 'o', color='blue')
-    # out3.plot(np.array([element[0] for element in outliers[2]]), np.array([element[1] for element in outliers[2]]), 'o', color='red')
+    runtime = time.time() - runtime
+    print(f"Excecution time: {runtime}s\n")
 
-    # plt.show()
+    ##Plot probabilities
+    fig, (corr1, corr2, corr3) = plt.subplots(3)
+    fig.suptitle('Probabilities')
+    corr1.plot(np.array([i for i in range(len(cor1))]), np.array(cor1), 'o', color='black')
+    corr2.plot(np.array([i for i in range(len(cor2))]), np.array(cor2), 'o', color='blue')
+    corr3.plot(np.array([i for i in range(len(cor3))]), np.array(cor3), 'o', color='red')
+
+    ##Plot outliers
+    fig2, (out1, out2, out3) = plt.subplots(3)
+    fig2.suptitle('Outliers')
+    out1.plot(np.array([element[0] for element in outliers[0]]), np.array([element[1] for element in outliers[0]]), 'o', color='black')
+    out2.plot(np.array([element[0] for element in outliers[1]]), np.array([element[1] for element in outliers[1]]), 'o', color='blue')
+    out3.plot(np.array([element[0] for element in outliers[2]]), np.array([element[1] for element in outliers[2]]), 'o', color='red')
+
+    plt.show()
